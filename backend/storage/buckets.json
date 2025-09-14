@@ -1,0 +1,30 @@
+{
+  "buckets": [
+    {
+      "name": "bills",
+      "public": false,
+      "file_size_limit": 52428800,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
+      "description": "Storage for bill receipt images"
+    },
+    {
+      "name": "avatars",
+      "public": true,
+      "file_size_limit": 5242880,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
+      "description": "Storage for user profile avatars"
+    }
+  ],
+  "policies": [
+    {
+      "bucket": "bills",
+      "policy": "Users can upload bills to their groups",
+      "definition": "bucket_id = 'bills' AND auth.uid() IS NOT NULL"
+    },
+    {
+      "bucket": "avatars",
+      "policy": "Users can upload their own avatars",
+      "definition": "bucket_id = 'avatars' AND auth.uid() IS NOT NULL"
+    }
+  ]
+}

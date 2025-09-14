@@ -1,0 +1,118 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.bill_items (
+  assigned_users ARRAY,
+  bill_id uuid NOT NULL,
+  name text NOT NULL,
+  price numeric NOT NULL,
+  category text,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  quantity integer DEFAULT 1,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT bill_items_pkey PRIMARY KEY (id),
+  CONSTRAINT bill_items_bill_id_fkey FOREIGN KEY (bill_id) REFERENCES public.bills(id)
+);
+CREATE TABLE public.bill_splits (
+  upi_reference text,
+  upi_screenshot_url text,
+  approval_status text DEFAULT 'pending'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
+  approval_at timestamp with time zone,
+  bill_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  amount numeric NOT NULL,
+  paid_at timestamp with time zone,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  paid boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT bill_splits_pkey PRIMARY KEY (id),
+  CONSTRAINT bill_splits_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT bill_splits_bill_id_fkey FOREIGN KEY (bill_id) REFERENCES public.bills(id)
+);
+CREATE TABLE public.bills (
+  tip_amount numeric DEFAULT 0,
+  tax_amount numeric DEFAULT 0,
+  split_method text DEFAULT 'equal'::text CHECK (split_method = ANY (ARRAY['equal'::text, 'by_item'::text, 'custom'::text])),
+  approved_at timestamp with time zone,
+  settled_at timestamp with time zone,
+  group_id uuid NOT NULL,
+  created_by uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  total_amount numeric NOT NULL,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  created_at timestamp with time zone DEFAULT now(),
+  image_url text,
+  currency text DEFAULT 'INR'::text,
+  status text DEFAULT 'draft'::text CHECK (status = ANY (ARRAY['draft'::text, 'pending'::text, 'approved'::text, 'settled'::text, 'cancelled'::text])),
+  CONSTRAINT bills_pkey PRIMARY KEY (id),
+  CONSTRAINT bills_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id),
+  CONSTRAINT bills_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.chat_messages (
+  group_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  message text NOT NULL,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT chat_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_messages_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id)
+);
+CREATE TABLE public.group_members (
+  group_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  role text DEFAULT 'member'::text CHECK (role = ANY (ARRAY['admin'::text, 'member'::text])),
+  joined_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT group_members_pkey PRIMARY KEY (id),
+  CONSTRAINT group_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT group_members_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id)
+);
+CREATE TABLE public.groups (
+  name text NOT NULL,
+  description text,
+  created_by uuid NOT NULL,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  invite_code text DEFAULT SUBSTRING(md5((random())::text) FROM 1 FOR 8) UNIQUE,
+  total_expenses numeric DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT groups_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.notifications (
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  message text NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['bill_added'::text, 'bill_pending_approval'::text, 'payment_request'::text, 'payment_received'::text, 'group_invite'::text, 'user_joined_group'::text, 'user_left_group'::text, 'bill_settled'::text])),
+  data jsonb,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  read boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.payments (
+  from_user_id uuid NOT NULL,
+  to_user_id uuid NOT NULL,
+  amount numeric NOT NULL,
+  bill_id uuid,
+  group_id uuid NOT NULL,
+  payment_method text NOT NULL CHECK (payment_method = ANY (ARRAY['upi'::text, 'cash'::text, 'bank_transfer'::text, 'stripe'::text, 'paypal'::text])),
+  transaction_id text,
+  completed_at timestamp with time zone,
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  currency text DEFAULT 'INR'::text,
+  CONSTRAINT payments_pkey PRIMARY KEY (id),
+  CONSTRAINT payments_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id),
+  CONSTRAINT payments_bill_id_fkey FOREIGN KEY (bill_id) REFERENCES public.bills(id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL,
+  email text NOT NULL UNIQUE,
+  name text NOT NULL,
+  avatar text,
+  created_at timestamp with time zone DEFAULT now(),
+  upi_id text,
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);

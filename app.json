@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "SmartSplit",
+    "slug": "smartsplitnew",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "main": "./frontend/App.tsx",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff",
+      "imageResizeMode": 500,
+      "imageWidth": 500,
+      "imageHeight": 500
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/splash.png",
+        "backgroundColor": "#FFFFFF",
+        "imageResizeMode": 500,
+        "imageWidth": 500,
+        "imageHeight": 500
+      },
+      "package": "com.smartsplit.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6b8552cb-d0be-4e0b-9a8c-ce609053907b"
+      }
+    }
+  }
+}
